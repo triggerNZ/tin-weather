@@ -1,8 +1,6 @@
 package triggernz.weather
 
 import triggernz.weather.util.{NonEmptyVector => NEV}
-import triggernz.weather.image.Image
-import java.awt.image.BufferedImage
 
 import scalaz.Comonad
 import Globe._
@@ -22,9 +20,13 @@ sealed trait Globe[A] {
 
   def apply(lat: Degrees, lng: Degrees): A = {
     val zeroLatIdx: Int = latCount / 2
+    val zeroLngIdx: Int = lngCount / 2
+
     val offsetFromZeroLatIdx: Int = (lat / degreesPerLatitude).toInt
-    val lngIdx: Int = (lng / degreesPerLongitude).toInt
-    apply(RectCoord(zeroLatIdx + offsetFromZeroLatIdx, lngIdx))
+    val offsetFromZeroLngIdx: Int = (lng / degreesPerLongitude).toInt
+
+    val rect = RectCoord(zeroLatIdx + offsetFromZeroLatIdx, zeroLngIdx + offsetFromZeroLngIdx)
+    apply(rect)
   }
 
   def toNEV: NEV[NEV[A]] = {
@@ -45,16 +47,27 @@ sealed trait Globe[A] {
     lng <- 0 until lngCount
   } yield apply(lat, lng)).toArray
 
-  def map[B](g: A => B): Globe[B] = new GlobeF(rectCoord => g(apply(rectCoord)), latCount, lngCount)
+  def map[B](g: A => B): Globe[B] =
+    new Lazy(rectCoord => g(apply(rectCoord)), latCount, lngCount)
+
+  def zipWith[B, C](other: Globe[B], f: (A, B) => C): Globe[C] = {
+    //TODO: This isn't quite right if the dimensions don't match
+    require(latCount == other.latCount)
+    require(lngCount == other.lngCount)
+    new Lazy[C](rect => f(apply(rect), other.apply(rect)), latCount, lngCount)
+  }
 
   def cursor: GlobeCursor[A] = GlobeCursor(0, 0, this)
   def allCursors: Globe[GlobeCursor[A]] =
-    new GlobeF(coord => GlobeCursor(coord.lat, coord.lng, this), latCount, lngCount)
+    new Lazy(coord => GlobeCursor(coord.lat, coord.lng, this), latCount, lngCount)
 }
 
 
 
 object Globe {
+  def apply[A](f: RectCoord => A, latCount: Int, lngCount: Int): Globe[A] =
+    new Lazy(f, latCount, lngCount)
+
   // Looks unsafe because index ranges are difficult to prove via types. However it is safe on the outside,
   // i.e. NEV[NEV[A]] => Globe[A] is always a valid operation
   // TODO: Hammer this with property tests
@@ -63,7 +76,7 @@ object Globe {
 
     val lats = nev.length
     val lngs = nev.head.length
-    new GlobeF({ coord =>
+    new Lazy({ coord =>
       nev.unsafeGet(normalise(coord.lat, lats)).unsafeGet(normalise(coord.lng, lngs))
       nev.unsafeGet(normalise(coord.lat, lats)).unsafeGet(normalise(coord.lng, lngs))
     }, lats, lngs)
@@ -71,33 +84,44 @@ object Globe {
 
   //As above
   def fromArray[A](arr: Array[A], lats: Int, lngs: Int): Globe[A] =
-    new GlobeArr(arr, lats, lngs)
+    new Eager(arr, lats, lngs)
 
   def HalfCircle = Degrees(180)
   def FullCircle = Degrees(360)
 
-  case class RectCoord(lat: Int, lng: Int)
-  case class SpherCoord(lat: Degrees, lng: Degrees)
+  case class RectCoord(lat: Int, lng: Int) {
+    def latitude(latCount: Int): Degrees = {
+      val degreesPerLatitude: Degrees = HalfCircle / latCount
+
+      degreesPerLatitude * (lat - latCount / 2 )
+    }
+
+
+    def longitude(lngCount: Int): Degrees = {
+      val degreesPerLongitude: Degrees = FullCircle / lngCount
+      degreesPerLongitude * (lng - lngCount / 2 )
+    }
+  }
 
   // Represents values of A distributed along a sphere.
   // Outer vector represents north to south, inner vectors are west to east.
-  private final class GlobeF[A](val f: RectCoord => A, val latCount: Int, val lngCount: Int) extends Globe[A] {
+  private final class Lazy[A](val f: RectCoord => A, val latCount: Int, val lngCount: Int) extends Globe[A] {
     override def apply(coord: RectCoord): A = f(coord)
 
     override def toString() = "GlobeF(<function>," + latCount + ", " + lngCount + ")"
   }
 
-  private final class GlobeArr[A](val arr: Array[A], val latCount: Int, val lngCount: Int) extends Globe[A] {
-    def apply(coord: RectCoord) = arr(coord.lat * latCount + coord.lng)
+  private final class Eager[A](val arr: Array[A], val latCount: Int, val lngCount: Int) extends Globe[A] {
+    def apply(coord: RectCoord) = {
+      arr(coord.lat * lngCount + coord.lng)
+    }
 
     override def toFlatArray[B >: A : ClassTag]: Array[B] =
       arr.asInstanceOf[Array[B]] //Unsafe but will work if A = B. Is fast
   }
-}
 
-final case class Degrees(value: Double) extends AnyVal {
-  def / (ratio: Int) = Degrees(value / ratio)
-  def / (otherDegrees: Degrees): Double = value / otherDegrees.value
+  def ofCoordinates(latCount: Int, lngCount: Int) =
+    Globe(rect => (rect.latitude(latCount), rect.longitude(lngCount)), latCount, lngCount)
 }
 
 final case class GlobeCursor[A](lat: Int, lng: Int, globe: Globe[A]) {

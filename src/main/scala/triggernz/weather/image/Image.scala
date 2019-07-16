@@ -14,7 +14,8 @@ object Image {
 
 
   def imageToGlobe(bi: BufferedImage): Globe[Byte] = {
-    val bytes = bi.getRaster.getDataBuffer.asInstanceOf[DataBufferByte].getData
+    val intBuf = Array.ofDim[Int](bi.getWidth() * bi.getHeight())
+    val bytes = bi.getRaster.getPixels(0, 0, bi.getWidth(), bi.getHeight(), intBuf).map(i => (i & 0xFF).toByte)
     Globe.fromArray(bytes, bi.getHeight, bi.getWidth())
   }
   def globeToImage(g: Globe[Byte]): BufferedImage = {
