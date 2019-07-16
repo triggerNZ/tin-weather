@@ -4,6 +4,7 @@ import scalaz.{Foldable1, Semigroup}
 
 final case class NonEmptyVector[+A](head: A, tail: Vector[A]) {
   def length = tail.length + 1
+
   def apply(idx: Int): Option[A] =
     if (idx == 0)
       Some(head)
@@ -15,7 +16,14 @@ final case class NonEmptyVector[+A](head: A, tail: Vector[A]) {
         None
     }
 
+  // Useful if we can prove on the outside that idx is in range. Faster than apply due to not allocating an option.
+  def unsafeGet(idx: Int): A =
+    if (idx == 0) head else (tail(idx - 1))
+
   def map[B](f: A => B) = NonEmptyVector(f(head), tail.map(f))
+
+  def toVector: Vector[A] =
+    (Vector.newBuilder[A] += head ++= tail).result()
 }
 
 object NonEmptyVector {
