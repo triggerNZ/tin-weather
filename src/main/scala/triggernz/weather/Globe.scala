@@ -169,7 +169,7 @@ final case class GlobeCursor[A](lat: Int, lng: Int, globe: Globe[A]) {
         GlobeCursor(lat, lng + halfLng, globe)
 
     } else GlobeCursor(lat + 1, lng, globe)
-  
+
   def east: GlobeCursor[A] =
     if (lng == globe.latCount - 1)
       GlobeCursor(lat, 0, globe)

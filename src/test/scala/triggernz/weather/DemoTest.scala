@@ -10,6 +10,17 @@ object DemoTest extends TestSuite {
       'terrain - {
         Demo.terrain(lat, lng) ==> Terrain.Lowland
       }
+
+      'convection - {
+        import scalaz.syntax.comonad._
+        val initial = Demo.initial.
+          cursor
+          .map {case (t, p, h, c, pp) => (t, p, c, h)}
+
+        val convection = initial.cobind(Convection.convection)
+        // Hard to say what the values will be but they should move
+        assert(convection.globe(lat, lng) != initial.globe(lat, lng))
+      }
     }
 
     'melbourne - {
