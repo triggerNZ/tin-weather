@@ -66,6 +66,7 @@ object Main {
       case Nil =>
         outputTable(365, Convection.noop)
       case _ =>
+        println(args.toList)
         println("Usage: <no args> | --convection <days> | --demoImage <demo image name>")
 
     }

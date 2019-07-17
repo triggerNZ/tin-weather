@@ -24,7 +24,7 @@ object Image {
     after
   }
 
-  def loadUnsafe(resourcePath: String): BufferedImage = {
+  def load(resourcePath: String): BufferedImage = {
     val stream = this.getClass().getClassLoader().getResourceAsStream(resourcePath)
     ImageIO.read(stream)
   }

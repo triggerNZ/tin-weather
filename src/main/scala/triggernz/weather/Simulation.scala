@@ -4,15 +4,19 @@ import triggernz.weather.image.Image
 import scalaz.syntax.comonad._
 
 object Simulation {
+
+  // TODO: Band temperature
+  // TODO: Restrict sun from cloud
+  type WeatherSystem = (Temperature, Pressure, Humidity, Cloud, Precipitation)
+
   lazy val elevationsImage: Globe[Byte] =
-    Image.imageToGlobe(Image.scaleDown(Image.loadUnsafe("gebco_08_rev_elev_21600x10800.png"), 2))
+    Image.imageToGlobe(Image.scaleDown(Image.load("gebco_08_rev_elev_21600x10800.png"), 2))
 
   def elevations: Globe[Double] = elevationsImage.map(Image.byteToPercent)
 
   // 8850 metres is the height of mt. everest, presumably the highest elevation in the world
   def elevationsInMetres: Globe[Int] = elevations.map(e => (e * 8850).toInt)
 
-  type WeatherSystem = (Temperature, Pressure, Humidity, Cloud, Precipitation)
 
   def elevationsMappedImage = elevationsImage.map(identity)
 
@@ -63,7 +67,7 @@ object Simulation {
       val ((oldTemp, _, oldHumidity, oldCloud, oldPrec), terrain, solarRadiation, elevation) = cursor.extract
 
       val (newPrec, cloudAfterPrec) = Precipitation.precipitation(oldCloud, oldTemp)
-      val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, dt)
+      val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, oldCloud, dt)
       val newPressure = Pressure.pressure(elevation, oldTemp)
       val newHumidity = Humidity.updateHumidity(oldHumidity, oldTemp, terrain, dt)
       val (newCloud, humidityAfterCloud) = Cloud.updateCloud(cloudAfterPrec, newHumidity)
