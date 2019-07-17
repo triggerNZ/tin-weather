@@ -1,6 +1,5 @@
 package triggernz.weather
 
-import triggernz.weather.util.{NonEmptyVector => NEV}
 import scalaz.{Comonad, Memo}
 import Globe._
 
@@ -28,17 +27,13 @@ sealed trait Globe[A] {
     apply(rect)
   }
 
-  def toNEV: NEV[NEV[A]] = {
-    def longitudeAsNev(lat: Int): NEV[A] = {
-      val head = apply(RectCoord(lat, 0))
-      val tail = for (i <- 1 until lngCount) yield apply(RectCoord(lat, i))
-      NEV(head, tail.toVector)
-    }
+  def toVector: Vector[Vector[A]] = {
+    def longitudeAsVector(lat: Int): Vector[A] =
+      (for (i <- 0 until lngCount) yield apply(RectCoord(lat, i))).toVector
 
-    val head = longitudeAsNev(0)
-    val tail = for (i <- 1 until latCount) yield longitudeAsNev(i)
-
-    NEV(head, tail.toVector)
+    (for {
+      i <- 0 until latCount
+    } yield longitudeAsVector(i)).toVector
   }
 
   def toFlatArray[B >: A : ClassTag]: Array[B] = (for {
@@ -84,14 +79,14 @@ object Globe {
   // Looks unsafe because index ranges are difficult to prove via types. However it is safe on the outside,
   // i.e. NEV[NEV[A]] => Globe[A] is always a valid operation
   // TODO: Hammer this with property tests
-  def fromNev2d[A](nev: NEV[NEV[A]]): Globe[A] = {
+  def fromVector[A](vec: Vector[Vector[A]]): Globe[A] = {
     def normalise(idx: Int, length: Int) = (idx + length) % length
 
-    val lats = nev.length
-    val lngs = nev.head.length
+    val lats = vec.length
+    val lngs = vec.head.length
     new Lazy({ coord =>
-      nev.unsafeGet(normalise(coord.lat, lats)).unsafeGet(normalise(coord.lng, lngs))
-      nev.unsafeGet(normalise(coord.lat, lats)).unsafeGet(normalise(coord.lng, lngs))
+      vec(normalise(coord.lat, lats))(normalise(coord.lng, lngs))
+      vec(normalise(coord.lat, lats))(normalise(coord.lng, lngs))
     }, lats, lngs)
   }
 

@@ -8,12 +8,12 @@ object DemoTest extends TestSuite {
       val ((lat, lng), _) = Main.cities("Sydney")
 
       'terrain - {
-        Main.terrain(lat, lng) ==> Terrain.Lowland
+        Simulation.terrain(lat, lng) ==> Terrain.Lowland
       }
 
       'convection - {
         import scalaz.syntax.comonad._
-        val initial = Main.initial.
+        val initial = Simulation.initial.
           cursor
           .map {case (t, p, h, c, pp) => (t, p, c, h)}
 
@@ -27,14 +27,14 @@ object DemoTest extends TestSuite {
       val ((lat, lng), _) = Main.cities("Melbourne")
 
       'terrain - {
-        Main.terrain(lat, lng) ==> Terrain.Lowland
+        Simulation.terrain(lat, lng) ==> Terrain.Lowland
       }
     }
 
     'mtEverest - {
       'terrain - {
         val (lat, lng) = (Degrees(-27.9881), Degrees(86.9250))
-        Main.terrain(lat, lng) ==> Terrain.Mountains
+        Simulation.terrain(lat, lng) ==> Terrain.Mountains
       }
     }
   }

@@ -1,7 +1,5 @@
 package triggernz.weather
 
-import triggernz.weather.util.{NonEmptyVector => NEV}
-
 import utest._
 
 import nyaya.prop._
@@ -10,18 +8,18 @@ import nyaya.gen._
 import nyaya.test.PropTest._
 
 object GlobeTest extends TestSuite{
-  val singleItemGlobe = Globe.fromNev2d(NEV(NEV("One value")))
-  val fourPieceGlobe = Globe.fromNev2d(NEV(NEV(0.0,1.0), NEV(2.0, 3.0)))
+  val singleItemGlobe = Globe.fromVector(Vector(Vector("One value")))
+  val fourPieceGlobe = Globe.fromVector(Vector(Vector(0.0,1.0), Vector(2.0, 3.0)))
   val latlongGlobe = Globe.ofCoordinates(180, 360)
 
   override def tests = Tests {
     'map - {
-      singleItemGlobe.map(_.toUpperCase).toNEV ==> Globe.fromNev2d(NEV(NEV("ONE VALUE"))).toNEV
-      fourPieceGlobe.map(_ * 2).toNEV ==> Globe.fromNev2d(NEV(NEV(0.0, 2.0), NEV(4.0, 6.0))).toNEV
+      singleItemGlobe.map(_.toUpperCase).toVector ==> Globe.fromVector(Vector(Vector("ONE VALUE"))).toVector
+      fourPieceGlobe.map(_ * 2).toVector ==> Globe.fromVector(Vector(Vector(0.0, 2.0), Vector(4.0, 6.0))).toVector
     }
 
     'zipWith - {
-      fourPieceGlobe.zipWith[Double, Double](fourPieceGlobe, (a, b) => a * b).toNEV ==> Globe.fromNev2d(NEV(NEV(0.0, 1.0), NEV(4.0, 9.0))).toNEV
+      fourPieceGlobe.zipWith[Double, Double](fourPieceGlobe, (a, b) => a * b).toVector ==> Globe.fromVector(Vector(Vector(0.0, 1.0), Vector(4.0, 9.0))).toVector
     }
 
     'rectCoord - {

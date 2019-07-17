@@ -56,6 +56,7 @@ object Main {
     case Precipitation.Snow => "Snow"
   }
 
+  // Simplistic CLI handling but good enough for this exercise
   def main(args: Array[String]): Unit = {
     args.toList match {
       case "--demoImage" :: name :: Nil =>
@@ -78,7 +79,7 @@ object Main {
               conditionString: String,
               temperature: Temperature,
               pressure: Pressure,
-              humidity: Humidity) =
+              humidity: Humidity): String =
     List(
       name,
       (s"${lat.value.toString},${lng.value.toString},${elevation}"),

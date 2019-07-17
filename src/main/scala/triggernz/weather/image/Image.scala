@@ -1,11 +1,14 @@
 package triggernz.weather.image
 
 import java.awt.geom.AffineTransform
-import java.awt.image.{AffineTransformOp, BufferedImage, DataBufferByte}
+import java.awt.image.{AffineTransformOp, BufferedImage}
 
 import javax.imageio.ImageIO
 import triggernz.weather.Globe
 
+/**
+  * Functions around image IO and conversions between doubles and image bytes
+  */
 object Image {
 
   def scaleDown(before: BufferedImage, factor: Int) = {
