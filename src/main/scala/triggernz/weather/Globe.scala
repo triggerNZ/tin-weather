@@ -1,8 +1,7 @@
 package triggernz.weather
 
 import triggernz.weather.util.{NonEmptyVector => NEV}
-
-import scalaz.Comonad
+import scalaz.{Comonad, Memo}
 import Globe._
 
 import scala.reflect.ClassTag
@@ -116,8 +115,10 @@ object Globe {
   // Represents values of A distributed along a sphere.
   // Outer vector represents north to south, inner vectors are west to east.
   private final class Lazy[A](val f: RectCoord => A, val latCount: Int, val lngCount: Int) extends Globe[A] {
+    val memo = Memo.immutableHashMapMemo(f)
+
     override def apply(coord: RectCoord): A = {
-      f(coord)
+      memo(coord)
     }
 
     override def toString() = "GlobeF(<function>," + latCount + ", " + lngCount + ")"
