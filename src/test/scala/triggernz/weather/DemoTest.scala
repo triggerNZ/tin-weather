@@ -18,7 +18,7 @@ object DemoTest extends TestSuite {
       }
 
       'temperatureProgression - {
-        val initial = time("InitialTemp", Demo.initialTemperature)
+        val initial = Demo.initialTemperature zip Demo.initialPressure
 
         var state = initial
         (0 to 96).foreach { i =>
@@ -27,14 +27,5 @@ object DemoTest extends TestSuite {
         }
       }
     }
-  }
-
-  private def time[A](name: String, a: => A): A = {
-    println(s"Starting ${name}")
-    val before = System.currentTimeMillis()
-    val aValue = a
-    val time = System.currentTimeMillis() - before
-    println(s"$name took ${time}ms")
-    aValue
   }
 }

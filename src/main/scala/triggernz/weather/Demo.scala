@@ -32,10 +32,14 @@ object Demo {
   def initialTemperature: Globe[Temperature] =
     Temperature.initialTemperatureGlobe(elevations.latCount, elevations.lngCount, Temperature.celsius(30), Temperature.celsius(-10))
 
+  def initialPressure: Globe[Pressure] = (initialTemperature zip elevationsInMetres).map { case (tmp, elev) =>
+    Pressure.pressure(elev, tmp)
+  }
+
   def initial: Globe[Temperature] =
     initialTemperature
 
-  def iterate(last: Globe[Temperature], hours: Hours, dt: Double): Globe[Temperature] = {
+  def iterate(last: Globe[(Temperature, Pressure)], hours: Hours, dt: Double): Globe[(Temperature, Pressure)] = {
     val day = DayOfYear((hours.value / 24).toInt) // Yes this isn't really correct. But it's a game
     val hourOfDay = Hours(hours.value - day.day * 24)
 
@@ -45,12 +49,13 @@ object Demo {
     val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c)) => (a, b, c) }
 
     allComponents.cursor.cobind { cursor =>
-      val (oldTemp, terrain, solarRadiation) = cursor.extract
+      val ((oldTemp, oldPressure), terrain, solarRadiation) = cursor.extract
 
       val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, dt)
+      val newPressure = Pressure.pressure(0, newTemp) //TODO use elevation
 
-      (newTemp, terrain, solarRadiation)
-    }.globe.map { case (temp, _, _) => temp }
+      (newTemp, newPressure, terrain, solarRadiation)
+    }.globe.map { case (temp, press, _, _) => (temp, press) }
   }
 
   def terrain: Globe[Terrain] = elevations.map(Terrain.elevationToTerrain)
@@ -104,21 +109,25 @@ object Demo {
       demo(args.head)
     else {
       //Simulate 2 years every 3 hours
-      var currentGlobe = Demo.initialTemperature
+      var currentGlobe = Demo.initialTemperature zip Demo.initialPressure
       (0 to (2 * 365 * 24) by 3).foreach { hourInt =>
         val hour = Hours(hourInt)
         cities.flatMap { case (name, ((lat, lng), requiredHours)) =>
           // It may be surprising to calculate unneeded states here. However it actually helps us prevent infinite
           // recursion and lets Memo do its thing
           val elevation = elevationsInMetres(lat, lng)
-          val temperature = currentGlobe(lat, lng)
+          val (temperature, pressure) = currentGlobe(lat, lng)
 
+          val conditions = "NA"
 
           if (requiredHours.contains(hour)) {
             Some(List(
               name,
               (s"${lat.value.toString},${lng.value.toString},${elevation}"),
-              temperature.toCelsius).mkString("|"))
+              conditions,
+              temperature.toCelsius,
+              (pressure.kpa * 10).toString
+            ).mkString("|"))
           } else {
             None
           }

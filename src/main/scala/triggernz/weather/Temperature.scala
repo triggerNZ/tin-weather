@@ -2,6 +2,10 @@ package triggernz.weather
 
 case class Temperature(kelvin: Double) extends AnyVal {
   def toCelsius = kelvin - Temperature.ZeroCelsius
+
+  def *(factor: Double) =
+    Temperature(kelvin * factor)
+
   override def toString = s"${toCelsius} ˚C"
 }
 
