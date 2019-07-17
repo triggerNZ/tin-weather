@@ -4,13 +4,16 @@ import java.awt.image.{BufferedImage, DataBufferByte}
 
 import javax.imageio.ImageIO
 import triggernz.weather.Globe
-import scalaz.zio.Task
 
 object Image {
-  def load(resourcePath: String): Task[BufferedImage] = Task {
+
+  def loadUnsafe(resourcePath: String): BufferedImage = {
     val stream = this.getClass().getClassLoader().getResourceAsStream(resourcePath)
     ImageIO.read(stream)
   }
+
+  def percentToByte(percentage: Double): Byte = ((percentage * 255).toInt & 0xFF).toByte
+  def byteToPercent(b: Byte): Double = (b.toInt & 0xFF) / 255.0
 
 
   def imageToGlobe(bi: BufferedImage): Globe[Byte] = {

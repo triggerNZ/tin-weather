@@ -1,5 +1,4 @@
 package triggernz.weather
-// based on https://www.pveducation.org/pvcdrom/properties-of-sunlight/solar-radiation-on-a-tilted-surface and
 // https://www.researchgate.net/profile/Mohamad_Kharseh/post/What_is_the_extra-terrestrial_solar_radiance_F0/attachment/59d63e0ac49f478072ea8d7b/AS%3A273765705945088%401442282238044/download/Solar+Radiation+Calculation.pdf
 
 object SolarRadiation {
@@ -12,16 +11,6 @@ object SolarRadiation {
   def declinationAngle(day: DayOfYear): Degrees =
     MaxDeclination * -Math.sin((284.0 + day.day) / 365 * TwoPi)
 
-  def elevationAngle(latitude: Degrees, day: DayOfYear): Degrees =
-    Degrees.RightAngle - latitude + declinationAngle(day)
-
-  // Between 0 and 1
-  def maximumSunlight(latitude: Degrees, day: DayOfYear): Double =
-    Math.sin(elevationAngle(latitude, day).radians)
-
-  def maximumSunlightGlobe(latCount: Int, lngCount: Int, day: DayOfYear) = Globe(
-    rec => maximumSunlight(rec.latitude(latCount), day), latCount,lngCount
-  )
 
   def sinSolarRadiationGlobe(latCount: Int, lngCount: Int, day: DayOfYear, utcHour: Hours) =
     Globe.ofCoordinates(latCount, lngCount).map { case (lat, lng) =>

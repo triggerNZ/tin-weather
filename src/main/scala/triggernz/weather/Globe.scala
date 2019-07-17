@@ -82,6 +82,9 @@ object Globe {
     }, lats, lngs)
   }
 
+  def const[A](a: A, lats: Int, lngs: Int): Globe[A] =
+    Globe(_ => a, lats, lngs)
+
   //As above
   def fromArray[A](arr: Array[A], lats: Int, lngs: Int): Globe[A] =
     new Eager(arr, lats, lngs)

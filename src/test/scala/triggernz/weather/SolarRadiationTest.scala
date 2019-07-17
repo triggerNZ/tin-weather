@@ -11,27 +11,6 @@ object SolarRadiationTest extends TestSuite {
       assert(SolarRadiation.declinationAngle(Equinox).value < 0.001) // Rounding errors
     }
 
-    'maximumSunshine - {
-      'equatorEquinox - {
-        SolarRadiation.maximumSunlight(Degrees(0), Equinox) ==> 1.0
-      }
-
-      'polesEquinox - {
-        val north = SolarRadiation.maximumSunlight(Degrees(-90), Equinox)
-        val south = SolarRadiation.maximumSunlight(Degrees(90), Equinox)
-        assert(south < 0.01)
-        assert (north < 0.01)
-      }
-
-      'polesNewYear - {
-        val north = SolarRadiation.maximumSunlight(Degrees(-90), NewYear)
-        val south = SolarRadiation.maximumSunlight(Degrees(90), NewYear)
-
-        assert(south > 0.01)
-        assert (north < 0.1)
-      }
-    }
-
     'sinSolar - {
       'zerozeroEquinox - {
         SolarRadiation.sinSolarElevation(Degrees(0), Degrees(0), Equinox, Hours(0)) ==> 0.0  //Midnight, no sun
@@ -43,44 +22,6 @@ object SolarRadiationTest extends TestSuite {
 
       'oppositeSideOfTheEarthEquinox - {
         SolarRadiation.sinSolarElevation(Degrees(180), Degrees(0), Equinox, Hours(12)) ==> 0.0
-      }
-    }
-
-    'maxSunlightGlobe - {
-      'newYearSouthSunnierThanNorth - {
-        val globe = SolarRadiation.maximumSunlightGlobe(180, 360, NewYear)
-        val fixedLng = Degrees(15)
-        for (latInt <- 1 to 90) {
-          val latSouth = Degrees(latInt)
-          val latNorth = Degrees(-latInt)
-
-          assert(globe(latNorth, fixedLng) < globe(latSouth, fixedLng))
-        }
-      }
-
-      'equinoxSymmetry - {
-        val globe = SolarRadiation.maximumSunlightGlobe(180, 360, Equinox)
-        val fixedLng = Degrees(15)
-        globe(Degrees(0), fixedLng) ==> 1.0
-
-        // As we move from the equator (both north and south, the radiation should be decreasing)
-        for (latInt <- 1 to 90) {
-          val lastLatSouth = Degrees(latInt - 1)
-          val lastLatNorth = Degrees(-(latInt - 1))
-
-          val latSouth = Degrees(latInt)
-          val latNorth = Degrees(-latInt)
-
-          assert(globe(latSouth, fixedLng) < globe(lastLatSouth, fixedLng))
-          assert(globe(latNorth, fixedLng) < globe(lastLatNorth, fixedLng))
-
-          //As we move east the radiation should stay identical
-          for (lngInt <- 1 to 360) {
-            val lastLng = Degrees(lngInt - 1)
-            val lng = Degrees(lngInt)
-            globe(latSouth, lastLng) ==> globe(latSouth, lng)
-          }
-        }
       }
     }
 
