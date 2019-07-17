@@ -33,7 +33,7 @@ object DemoTest extends TestSuite {
 
     'mtEverest - {
       'terrain - {
-        val (lat, lng) = (Degrees(-27.9881), Degrees(86.9250))
+        val (lat, lng) = (Degrees(27.9881), Degrees(86.9250))
         Simulation.terrain(lat, lng) ==> Terrain.Mountains
       }
     }

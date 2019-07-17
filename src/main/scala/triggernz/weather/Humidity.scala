@@ -5,7 +5,8 @@ import triggernz.weather.Terrain.{Lowland, Mountains, Sea}
 case class Humidity(value: Double) extends AnyVal
 
 object Humidity {
-  val EvaporationFactor = 2
+  val SeaEvaporationFactor = 2
+  val NonSeaEvaporationFactor = 0.2 // A little bit of evaporation still comes from rivers, lakes, swimming pools, living beings, etc
 
   def updateHumidity(oldHumidity: Humidity, temperature: Temperature, terrain: Terrain, dt: Hours) = terrain match {
     case Sea =>
@@ -14,12 +15,10 @@ object Humidity {
       val tempDiff = Math.max(temperature.kelvin - Temperature.ZeroCelsius + 5, 0)
       val ratioToBoiling = tempDiff / 100.0
       val roomForMoreVapour = 1.0 - oldHumidity.value
-      val humidityDiff = roomForMoreVapour * ratioToBoiling * EvaporationFactor
+      val humidityDiff = roomForMoreVapour * ratioToBoiling * SeaEvaporationFactor
       Humidity(oldHumidity.value + humidityDiff)
 
-    case Lowland =>
-      oldHumidity
-    case Mountains =>
-      oldHumidity
+    case Lowland | Mountains =>
+      Humidity(Math.min(1, oldHumidity.value + oldHumidity.value * NonSeaEvaporationFactor))
   }
 }

@@ -4,9 +4,7 @@ import triggernz.weather.image.Image
 import scalaz.syntax.comonad._
 
 object Simulation {
-
   // TODO: Band temperature
-  // TODO: Restrict sun from cloud
   type WeatherSystem = (Temperature, Pressure, Humidity, Cloud, Precipitation)
 
   lazy val elevationsImage: Globe[Byte] =

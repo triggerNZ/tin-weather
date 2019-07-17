@@ -20,17 +20,17 @@ object Main {
 
   val cities: Map[String, ((Degrees, Degrees), Set[Hours])] =
     Map(
-      "Sydney"    -> ((Degrees(33.8688), Degrees(151.2093)), Set(Hours(0), Hours(24), Hours(10 * 24 + 6), Hours(300 * 24 + 6))),
-      "Melbourne" -> ((Degrees(37.8136), Degrees(144.9631)), Set(Hours(1), Hours(14 * 24 + 9))),
-      "London"    -> ((Degrees(-51.5074), Degrees(-0.1278)), Set[Hours]()),
-      "Paris"     -> ((Degrees(-48.8566), Degrees(2.3522)), Set[Hours]()),
-      "Auckland"  -> ((Degrees(36.8485), Degrees(174.7633)), Set[Hours]()),
-      "Beijing"   -> ((Degrees(-39.9042), Degrees(116.4074)), Set[Hours]()),
-      "Fiji"      -> ((Degrees(17.7134), Degrees(178.0650)), Set[Hours]()),
-      "Nairobi"   -> ((Degrees(1.2921), Degrees(36.8219)), Set[Hours]()),
-      "Las Vegas" -> ((Degrees(-36.1699), Degrees(-115.1398)), Set[Hours]()),
-      "Santiago"  -> ((Degrees(33.4489), Degrees(-70.6693)), Set(Hours(1), Hours(22 * 24 + 9), Hours(5 * 24 + 3))),
-      "Dubai"     -> ((Degrees(-25.2048), Degrees(55.2708)), Set[Hours]()),
+      "Sydney"    -> ((Degrees(-33.8688), Degrees(151.2093)), Set(Hours(0), Hours(24), Hours(10 * 24 + 6), Hours(300 * 24 + 6))),
+      "Melbourne" -> ((Degrees(-37.8136), Degrees(144.9631)), Set(Hours(1), Hours(14 * 24 + 9))),
+      "London"    -> ((Degrees(51.5074), Degrees(-0.1278)), Set[Hours]()),
+      "Paris"     -> ((Degrees(48.8566), Degrees(2.3522)), Set[Hours]()),
+      "Auckland"  -> ((Degrees(-36.8485), Degrees(174.7633)), Set[Hours]()),
+      "Beijing"   -> ((Degrees(39.9042), Degrees(116.4074)), Set[Hours]()),
+      "Fiji"      -> ((Degrees(-17.7134), Degrees(178.0650)), Set[Hours]()),
+      "Nairobi"   -> ((Degrees(-1.2921), Degrees(36.8219)), Set[Hours]()),
+      "Las Vegas" -> ((Degrees(36.1699), Degrees(-115.1398)), Set[Hours]()),
+      "Santiago"  -> ((Degrees(-33.4489), Degrees(-70.6693)), Set(Hours(1), Hours(22 * 24 + 9), Hours(5 * 24 + 3))),
+      "Dubai"     -> ((Degrees(25.2048), Degrees(55.2708)), Set[Hours]()),
       "Out at sea" -> ((Degrees(0), Degrees(0)), Set[Hours](Hours(0), Hours(1), Hours(2), Hours(10)))
     )
 
@@ -83,11 +83,11 @@ object Main {
               humidity: Humidity): String =
     List(
       name,
-      (s"${lat.value.toString},${lng.value.toString},${elevation}"),
+      (f"${lat.value}%3.2f,${lng.value}%3.2f,${elevation}"),
       localTime.format(LocalTime.Format),
       conditionString,
-      temperature.toCelsius,
-      (pressure.kpa * 10).toString,
+      f"${temperature.toCelsius}%2.1f",
+      f"${pressure.kpa * 10}%3.1f",
       (humidity.value * 100).toInt.toString
     ).mkString("|")
 

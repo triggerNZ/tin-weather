@@ -23,7 +23,7 @@ sealed trait Globe[A] {
     val offsetFromZeroLatIdx: Int = (lat / degreesPerLatitude).toInt
     val offsetFromZeroLngIdx: Int = (lng / degreesPerLongitude).toInt
 
-    val rect = RectCoord(zeroLatIdx + offsetFromZeroLatIdx, zeroLngIdx + offsetFromZeroLngIdx)
+    val rect = RectCoord(zeroLatIdx - offsetFromZeroLatIdx, zeroLngIdx + offsetFromZeroLngIdx)
     apply(rect)
   }
 
@@ -105,7 +105,7 @@ object Globe {
     def latitude(latCount: Int): Degrees = {
       val degreesPerLatitude: Degrees = HalfCircle / latCount
 
-      degreesPerLatitude * (lat - latCount / 2 )
+      degreesPerLatitude * -(lat - latCount / 2 )
     }
 
 

@@ -27,7 +27,7 @@ object GlobeTest extends TestSuite{
         val equator = Globe.RectCoord(90, 90)
         val northPole = Globe.RectCoord(0, 0)
         equator.latitude(180) ==> Degrees(0)
-        northPole.latitude(180) ==> Degrees(-90)
+        northPole.latitude(180) ==> Degrees(90)
       }
       'toLongitude - {
         val topLeft = Globe.RectCoord(0, 0)
