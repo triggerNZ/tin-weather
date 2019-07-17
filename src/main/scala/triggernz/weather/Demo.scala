@@ -1,9 +1,10 @@
 package triggernz.weather
 
 
+import java.time.format.DateTimeFormatter
+
 import javax.imageio.ImageIO
 import triggernz.weather.image.Image
-
 import scalaz.syntax.comonad._
 
 object Demo {
@@ -36,10 +37,18 @@ object Demo {
     Pressure.pressure(elev, tmp)
   }
 
-  def initial: Globe[Temperature] =
-    initialTemperature
+  def initialHumidity: Globe[Humidity] =
+    Globe.const(Humidity(0.2), elevations.latCount, elevations.lngCount)
 
-  def iterate(last: Globe[(Temperature, Pressure)], hours: Hours, dt: Double): Globe[(Temperature, Pressure)] = {
+  def initialCloud: Globe[Cloud] =
+    Globe.const(Cloud(0.2), elevations.latCount, elevations.lngCount)
+
+  def initial: Globe[(Temperature, Pressure, Humidity, Cloud)] =
+    initialTemperature.zip4(initialPressure, initialHumidity, initialCloud)
+
+  def iterate(last: Globe[(Temperature, Pressure, Humidity, Cloud)],
+              hours: Hours,
+              dt: Hours): Globe[(Temperature, Pressure, Humidity, Cloud)] = {
     val day = DayOfYear((hours.value / 24).toInt) // Yes this isn't really correct. But it's a game
     val hourOfDay = Hours(hours.value - day.day * 24)
 
@@ -49,13 +58,15 @@ object Demo {
     val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c)) => (a, b, c) }
 
     allComponents.cursor.cobind { cursor =>
-      val ((oldTemp, oldPressure), terrain, solarRadiation) = cursor.extract
+      val ((oldTemp, _, oldHumidity, oldCloud), terrain, solarRadiation) = cursor.extract
 
       val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, dt)
-      val newPressure = Pressure.pressure(0, newTemp) //TODO use elevation
+      val newPressure = Pressure.pressure(0, oldTemp) //TODO use elevation
+      val newHumidity = Humidity.updateHumidity(oldHumidity, oldTemp, terrain, dt)
+      val (newCloud, humidityAfterCloud) = Cloud.updateCloud(oldCloud, newHumidity)
 
-      (newTemp, newPressure, terrain, solarRadiation)
-    }.globe.map { case (temp, press, _, _) => (temp, press) }
+      (newTemp, newPressure, humidityAfterCloud, newCloud, terrain, solarRadiation)
+    }.globe.map { case (temp, press, humid, cloud, _, _) => (temp, press, humid, cloud) }
   }
 
   def terrain: Globe[Terrain] = elevations.map(Terrain.elevationToTerrain)
@@ -86,7 +97,8 @@ object Demo {
       "Nairobi"   -> ((Degrees(1.2921), Degrees(36.8219)), Set[Hours]()),
       "Las Vegas" -> ((Degrees(-36.1699), Degrees(-115.1398)), Set[Hours]()),
       "Santiago"  -> ((Degrees(33.4489), Degrees(-70.6693)), Set(Hours(1), Hours(300 * 24 + 9), Hours(5 * 24 + 3))),
-      "Dubai"     -> ((Degrees(-25.2048), Degrees(55.2708)), Set[Hours]())
+      "Dubai"     -> ((Degrees(-25.2048), Degrees(55.2708)), Set[Hours]()),
+      "Out at sea" -> ((Degrees(0), Degrees(0)), Set[Hours](Hours(0), Hours(1), Hours(2), Hours(10)))
     )
 
 
@@ -108,31 +120,33 @@ object Demo {
     if (args.length > 0)
       demo(args.head)
     else {
-      //Simulate 2 years every 3 hours
-      var currentGlobe = Demo.initialTemperature zip Demo.initialPressure
-      (0 to (2 * 365 * 24) by 3).foreach { hourInt =>
+      //Simulate 2 years by hour
+      var currentGlobe = initial
+      (0 to (2 * 365 * 24)).foreach { hourInt =>
         val hour = Hours(hourInt)
         cities.flatMap { case (name, ((lat, lng), requiredHours)) =>
           // It may be surprising to calculate unneeded states here. However it actually helps us prevent infinite
           // recursion and lets Memo do its thing
           val elevation = elevationsInMetres(lat, lng)
-          val (temperature, pressure) = currentGlobe(lat, lng)
+          val (temperature, pressure, humidity, cloud) = currentGlobe(lat, lng)
 
-          val conditions = "NA"
-
+          val conditions = "<CONDITIONS-TODO>"
+          val localTime = LocalTime.computeLocalTime(hour, lng)
           if (requiredHours.contains(hour)) {
             Some(List(
               name,
               (s"${lat.value.toString},${lng.value.toString},${elevation}"),
+              localTime.format(LocalTime.Format),
               conditions,
               temperature.toCelsius,
-              (pressure.kpa * 10).toString
+              (pressure.kpa * 10).toString,
+              (humidity.value * 100).toInt.toString
             ).mkString("|"))
           } else {
             None
           }
         }.foreach(println)
-        currentGlobe = Demo.iterate(currentGlobe, hour, 3.0)
+        currentGlobe = Demo.iterate(currentGlobe, hour, Hours(1.0))
       }
     }
   }

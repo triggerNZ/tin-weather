@@ -6,6 +6,9 @@ case class Temperature(kelvin: Double) extends AnyVal {
   def *(factor: Double) =
     Temperature(kelvin * factor)
 
+  def -(other: Temperature) =
+    Temperature(kelvin - other.kelvin)
+
   override def toString = s"${toCelsius} ˚C"
 }
 
@@ -26,13 +29,13 @@ object Temperature {
 
   // This is fudged to kinda make sense. Oceans cool and heat slowly, Lowlands cool and heat quickly. Mountains cool
   // quickly and heat slowly
-  def updateTemperature(old: Temperature, terrain: Terrain, solarRadiation: SolarRadiation, dt: Double): Temperature = terrain match {
+  def updateTemperature(old: Temperature, terrain: Terrain, solarRadiation: SolarRadiation, dt: Hours): Temperature = terrain match {
     case Terrain.Lowland =>
-      Temperature(old.kelvin + (solarRadiation.value * LowlandHeat - LowlandCool) * dt)
+      Temperature(old.kelvin + (solarRadiation.value * LowlandHeat - LowlandCool) * dt.value)
     case Terrain.Mountains =>
-      Temperature(old.kelvin + (solarRadiation.value * MountainHeat - MountainCool) * dt)
+      Temperature(old.kelvin + (solarRadiation.value * MountainHeat - MountainCool) * dt.value)
     case Terrain.Sea =>
-      Temperature(old.kelvin + (solarRadiation.value * OceanHeat - OceanCool) * dt)
+      Temperature(old.kelvin + (solarRadiation.value * OceanHeat - OceanCool) * dt.value)
   }
 
   def initialTemperatureGlobe(latCount: Int, lngCount: Int, equatorTemperature: Temperature, poleTemperature: Temperature): Globe[Temperature] =
