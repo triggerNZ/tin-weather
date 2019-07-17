@@ -144,11 +144,44 @@ object Globe {
 }
 
 final case class GlobeCursor[A](lat: Int, lng: Int, globe: Globe[A]) {
+  private lazy val halfLng = globe.lngCount/2
+
   def map[B](f: A => B) = GlobeCursor[B](lat, lng, globe.map(f))
   def extract: A =
     globe(lat, lng)
 
   def duplicate: GlobeCursor[GlobeCursor[A]] = GlobeCursor(lat, lng, globe.allCursors)
+
+  def north: GlobeCursor[A] =
+    if (lat == 0) {
+      if (lng > halfLng)
+        GlobeCursor(lat, lng - halfLng, globe)
+      else
+        GlobeCursor(lat, lng + halfLng, globe)
+
+    } else GlobeCursor(lat - 1, lng, globe)
+
+  def south: GlobeCursor[A] =
+    if (lat == globe.latCount - 1) {
+      if (lng > halfLng)
+        GlobeCursor(lat, lng - halfLng, globe)
+      else
+        GlobeCursor(lat, lng + halfLng, globe)
+
+    } else GlobeCursor(lat + 1, lng, globe)
+  
+  def east: GlobeCursor[A] =
+    if (lng == globe.latCount - 1)
+      GlobeCursor(lat, 0, globe)
+    else
+      GlobeCursor(lat, lng + 1, globe)
+
+  def west: GlobeCursor[A] =
+    if (lng == 0)
+      GlobeCursor(lat, globe.lngCount - 1, globe)
+    else
+     GlobeCursor(lat, lng - 1, globe)
+
 }
 
 object GlobeCursor {

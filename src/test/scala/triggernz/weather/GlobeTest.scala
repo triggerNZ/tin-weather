@@ -43,6 +43,35 @@ object GlobeTest extends TestSuite{
     'properties - {
       'coordsInCoordsOut - testProp(Properties.coordsInEqualCoordsOut, Generators.genLatLng)
     }
+
+    'cursor - {
+      'northPoleNorth - {
+        GlobeCursor(0, 0, fourPieceGlobe).north ==> GlobeCursor(0, 1, fourPieceGlobe)
+      }
+      'nonPoleNorth - {
+        GlobeCursor(1, 0, fourPieceGlobe).north ==> GlobeCursor(0, 0, fourPieceGlobe)
+      }
+      'southPoleSouth - {
+        GlobeCursor(1, 0, fourPieceGlobe).south ==> GlobeCursor(1, 1, fourPieceGlobe)
+      }
+      'nonPoleSouth - {
+        GlobeCursor(0, 1, fourPieceGlobe).south ==> GlobeCursor(1, 1, fourPieceGlobe)
+      }
+
+      'eastAtEnd - {
+        GlobeCursor(0, 1, fourPieceGlobe).east ==> GlobeCursor(0, 0, fourPieceGlobe)
+      }
+      'east - {
+        GlobeCursor(0, 0, fourPieceGlobe).east ==> GlobeCursor(0, 1, fourPieceGlobe)
+      }
+
+      'westAtStart - {
+        GlobeCursor(0, 0, fourPieceGlobe).west ==> GlobeCursor(0, 1, fourPieceGlobe)
+      }
+      'west - {
+        GlobeCursor(0, 1, fourPieceGlobe).east ==> GlobeCursor(0, 0, fourPieceGlobe)
+      }
+    }
   }
 
   object Properties {

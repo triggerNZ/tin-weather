@@ -11,5 +11,13 @@ object DemoTest extends TestSuite {
         Demo.terrain(lat, lng) ==> Terrain.Lowland
       }
     }
+
+    'melbourne - {
+      val ((lat, lng), _) = Demo.cities("Melbourne")
+
+      'terrain - {
+        Demo.terrain(lat, lng) ==> Terrain.Lowland
+      }
+    }
   }
 }

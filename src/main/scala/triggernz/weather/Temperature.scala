@@ -13,9 +13,9 @@ case class Temperature(kelvin: Double) extends AnyVal {
 }
 
 object Temperature {
-  val LowlandCool = 0.4
+  val LowlandCool = 0.3
   val MountainCool = 0.7
-  val OceanCool = 0.1
+  val OceanCool = 0.3
 
   val LowlandHeat = 1.3
   val OceanHeat = 0.3
@@ -44,4 +44,5 @@ object Temperature {
       val diff = (Math.abs(lat.value) / 90) * range
       Temperature(equatorTemperature.kelvin - diff)
     }
+
 }
