@@ -65,6 +65,9 @@ sealed trait Globe[A] {
   def zip4[B, C, D](other1: Globe[B], other2: Globe[C], other3: Globe[D]): Globe[(A, B, C, D)] =
     zip(other1.zip3(other2, other3)).map {case (a, (b, c, d)) => (a, b, c, d)}
 
+  def zip5[B, C, D, E](other1: Globe[B], other2: Globe[C], other3: Globe[D], other4: Globe[E]): Globe[(A, B, C, D, E)] =
+    zip(other1.zip4(other2, other3, other4)).map {case (a, (b, c, d, e)) => (a, b, c, d, e)}
+
   def cursor: GlobeCursor[A] = GlobeCursor(0, 0, this)
   def allCursors: Globe[GlobeCursor[A]] =
     new Lazy(coord => GlobeCursor(coord.lat, coord.lng, this), latCount, lngCount)

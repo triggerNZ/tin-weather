@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import javax.imageio.ImageIO
 import triggernz.weather.image.Image
 import scalaz.syntax.comonad._
+import triggernz.weather.Precipitation.{Rain, Snow}
 
 object Demo {
   lazy val elevationsImage: Globe[Byte] =
@@ -15,6 +16,8 @@ object Demo {
 
   // 8850 metres is the height of mt. everest, presumably the highest elevation in the world
   val elevationsInMetres: Globe[Int] = elevations.map(e => (e * 8850).toInt)
+
+  type WeatherSystem = (Temperature, Pressure, Humidity, Cloud, Precipitation)
 
   def elevationsMappedImage = elevationsImage.map(identity)
 
@@ -43,30 +46,34 @@ object Demo {
   def initialCloud: Globe[Cloud] =
     Globe.const(Cloud(0.2), elevations.latCount, elevations.lngCount)
 
-  def initial: Globe[(Temperature, Pressure, Humidity, Cloud)] =
-    initialTemperature.zip4(initialPressure, initialHumidity, initialCloud)
+  def initialPrecipitation: Globe[Precipitation] =
+    Globe.const(Precipitation.None, elevations.latCount, elevations.lngCount)
 
-  def iterate(last: Globe[(Temperature, Pressure, Humidity, Cloud)],
+  def initial: Globe[WeatherSystem] =
+    initialTemperature.zip5(initialPressure, initialHumidity, initialCloud, initialPrecipitation)
+
+  def iterate(last: Globe[WeatherSystem],
               hours: Hours,
-              dt: Hours): Globe[(Temperature, Pressure, Humidity, Cloud)] = {
+              dt: Hours): Globe[WeatherSystem] = {
     val day = DayOfYear((hours.value / 24).toInt) // Yes this isn't really correct. But it's a game
     val hourOfDay = Hours(hours.value - day.day * 24)
 
-    val nonComonadicComponents: Globe[(Terrain, SolarRadiation)] =
-      terrain.zip(sinSunshine(day, hourOfDay))
+    val nonComonadicComponents: Globe[(Terrain, SolarRadiation, Int)] =
+      terrain.zip3(sinSunshine(day, hourOfDay), elevationsInMetres)
 
-    val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c)) => (a, b, c) }
+    val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c, d)) => (a, b, c, d) }
 
     allComponents.cursor.cobind { cursor =>
-      val ((oldTemp, _, oldHumidity, oldCloud), terrain, solarRadiation) = cursor.extract
+      val ((oldTemp, _, oldHumidity, oldCloud, oldPrec), terrain, solarRadiation, elevation) = cursor.extract
 
+      val (newPrec, cloudAfterPrec) = Precipitation.precipitation(oldCloud, oldTemp)
       val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, dt)
-      val newPressure = Pressure.pressure(0, oldTemp) //TODO use elevation
+      val newPressure = Pressure.pressure(elevation, oldTemp)
       val newHumidity = Humidity.updateHumidity(oldHumidity, oldTemp, terrain, dt)
-      val (newCloud, humidityAfterCloud) = Cloud.updateCloud(oldCloud, newHumidity)
+      val (newCloud, humidityAfterCloud) = Cloud.updateCloud(cloudAfterPrec, newHumidity)
 
-      (newTemp, newPressure, humidityAfterCloud, newCloud, terrain, solarRadiation)
-    }.globe.map { case (temp, press, humid, cloud, _, _) => (temp, press, humid, cloud) }
+      (newTemp, newPressure, humidityAfterCloud, newCloud, newPrec, terrain, solarRadiation)
+    }.globe.map { case (temp, press, humid, cloud, prec, _, _) => (temp, press, humid, cloud, prec) }
   }
 
   def terrain: Globe[Terrain] = elevations.map(Terrain.elevationToTerrain)
@@ -116,6 +123,13 @@ object Demo {
     savePng(globe(), name)
   }
 
+  def conditionString(cloud: Cloud, prec: Precipitation): String = prec match {
+    case Precipitation.None if cloud.percent > 0.4 => "Cloudy"
+    case Precipitation.None => "Clear"  //TODO: possibly detect sunny
+    case Precipitation.Rain => "Rain"
+    case Precipitation.Snow => "Snow"
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.length > 0)
       demo(args.head)
@@ -128,9 +142,9 @@ object Demo {
           // It may be surprising to calculate unneeded states here. However it actually helps us prevent infinite
           // recursion and lets Memo do its thing
           val elevation = elevationsInMetres(lat, lng)
-          val (temperature, pressure, humidity, cloud) = currentGlobe(lat, lng)
+          val (temperature, pressure, humidity, cloud, prec) = currentGlobe(lat, lng)
 
-          val conditions = "<CONDITIONS-TODO>"
+          val conditions = conditionString(cloud, prec)
           val localTime = LocalTime.computeLocalTime(hour, lng)
           if (requiredHours.contains(hour)) {
             Some(List(
