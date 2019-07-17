@@ -1,6 +1,10 @@
 package triggernz.weather
 
 object Convection {
+  type ConvectionFn =
+    (GlobeCursor[(Temperature, Pressure, Cloud, Humidity)], Hours) =>
+      (Temperature, Pressure, Cloud, Humidity)
+
   object Factors {
     val Pressure = 20
     val Temperature = 1
@@ -8,9 +12,12 @@ object Convection {
     val Humidity = 20
   }
 
+  def noop(cursor: GlobeCursor[(Temperature, Pressure, Cloud, Humidity)], hour: Hours):
+    (Temperature, Pressure, Cloud, Humidity) = cursor.extract
+
   // The basic idea is: Get a pressure differential and then update values in each direction
   // according to the differential.
-  def convection(cursor: GlobeCursor[(Temperature, Pressure, Cloud, Humidity)]):
+  def convection(cursor: GlobeCursor[(Temperature, Pressure, Cloud, Humidity)], hour: Hours):
     (Temperature, Pressure, Cloud, Humidity) = {
     val local = cursor.extract
     val north = cursor.north.extract
@@ -24,6 +31,7 @@ object Convection {
         singleDirection(south) _ andThen
         singleDirection(west)
     val result = allDirections(local)
+
     result
   }
 

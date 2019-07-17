@@ -5,29 +5,36 @@ import utest._
 object DemoTest extends TestSuite {
   override def tests = Tests {
     'sydney - {
-      val ((lat, lng), _) = Demo.cities("Sydney")
+      val ((lat, lng), _) = Main.cities("Sydney")
 
       'terrain - {
-        Demo.terrain(lat, lng) ==> Terrain.Lowland
+        Main.terrain(lat, lng) ==> Terrain.Lowland
       }
 
       'convection - {
         import scalaz.syntax.comonad._
-        val initial = Demo.initial.
+        val initial = Main.initial.
           cursor
           .map {case (t, p, h, c, pp) => (t, p, c, h)}
 
-        val convection = initial.cobind(Convection.convection)
+        val convection = initial.cobind(Convection.convection(_, Hours(1)))
         // Hard to say what the values will be but they should move
         assert(convection.globe(lat, lng) != initial.globe(lat, lng))
       }
     }
 
     'melbourne - {
-      val ((lat, lng), _) = Demo.cities("Melbourne")
+      val ((lat, lng), _) = Main.cities("Melbourne")
 
       'terrain - {
-        Demo.terrain(lat, lng) ==> Terrain.Lowland
+        Main.terrain(lat, lng) ==> Terrain.Lowland
+      }
+    }
+
+    'mtEverest - {
+      'terrain - {
+        val (lat, lng) = (Degrees(-27.9881), Degrees(86.9250))
+        Main.terrain(lat, lng) ==> Terrain.Mountains
       }
     }
   }

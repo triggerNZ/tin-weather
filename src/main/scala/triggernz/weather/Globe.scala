@@ -71,6 +71,8 @@ sealed trait Globe[A] {
   def cursor: GlobeCursor[A] = GlobeCursor(0, 0, this)
   def allCursors: Globe[GlobeCursor[A]] =
     new Lazy(coord => GlobeCursor(coord.lat, coord.lng, this), latCount, lngCount)
+
+  def materialize[B >: A : ClassTag]: Globe[B]
 }
 
 
@@ -127,6 +129,8 @@ object Globe {
       memo(coord)
     }
 
+    override def materialize[B >: A : ClassTag] = new Eager(toFlatArray, latCount, lngCount)
+
     override def toString() = "GlobeF(<function>," + latCount + ", " + lngCount + ")"
   }
 
@@ -137,10 +141,16 @@ object Globe {
 
     override def toFlatArray[B >: A : ClassTag]: Array[B] =
       arr.asInstanceOf[Array[B]] //Unsafe but will work if A = B. Is fast
+
+
+    override def materialize[B >: A : ClassTag] =
+      this.asInstanceOf[Globe[B]] // Same as above
   }
 
   def ofCoordinates(latCount: Int, lngCount: Int) =
     Globe(rect => (rect.latitude(latCount), rect.longitude(lngCount)), latCount, lngCount)
+
+
 }
 
 final case class GlobeCursor[A](lat: Int, lng: Int, globe: Globe[A]) {

@@ -1,11 +1,25 @@
 package triggernz.weather.image
 
-import java.awt.image.{BufferedImage, DataBufferByte}
+import java.awt.geom.AffineTransform
+import java.awt.image.{AffineTransformOp, BufferedImage, DataBufferByte}
 
 import javax.imageio.ImageIO
 import triggernz.weather.Globe
 
 object Image {
+
+  def scaleDown(before: BufferedImage, factor: Int) = {
+    val w= before.getWidth()
+    val h = before.getHeight()
+
+    val after = new BufferedImage(w/factor, h/factor, BufferedImage.TYPE_BYTE_GRAY)
+    val at = new AffineTransform()
+    val factorInv = 1.0 / factor
+    at.scale(factorInv, factorInv)
+    val scaleOp = new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR)
+    scaleOp.filter(before, after)
+    after
+  }
 
   def loadUnsafe(resourcePath: String): BufferedImage = {
     val stream = this.getClass().getClassLoader().getResourceAsStream(resourcePath)
