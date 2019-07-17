@@ -10,4 +10,6 @@ libraryDependencies ++= Seq(
 
 testFrameworks += new TestFramework("utest.runner.Framework")
 
-fork in run in Test := true
+fork in Test := true
+javaOptions in Test += "-Xmx4096m"
+

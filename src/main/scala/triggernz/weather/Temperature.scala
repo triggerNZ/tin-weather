@@ -1,18 +1,23 @@
 package triggernz.weather
 
-case class Temperature(kelvin: Double) extends AnyVal
+case class Temperature(kelvin: Double) extends AnyVal {
+  def toCelsius = kelvin - Temperature.ZeroCelsius
+  override def toString = s"${toCelsius} ˚C"
+}
 
 object Temperature {
-  val LowlandCool = 0.7
+  val LowlandCool = 0.4
   val MountainCool = 0.7
   val OceanCool = 0.1
 
-  val LowlandHeat = 1.5
+  val LowlandHeat = 1.3
   val OceanHeat = 0.3
   val MountainHeat = 0.5
 
+  val ZeroCelsius = 273.15
+
   def celsius(c: Double): Temperature =
-    Temperature(273.15 + c)
+    Temperature(ZeroCelsius + c)
 
 
   // This is fudged to kinda make sense. Oceans cool and heat slowly, Lowlands cool and heat quickly. Mountains cool

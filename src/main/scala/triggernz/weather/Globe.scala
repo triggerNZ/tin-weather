@@ -57,6 +57,12 @@ sealed trait Globe[A] {
     new Lazy[C](rect => f(apply(rect), other.apply(rect)), latCount, lngCount)
   }
 
+  def zip[B](other: Globe[B]): Globe[(A, B)] =
+    zipWith[B, (A, B)](other, (a, b) => (a, b))
+
+  def zip3[B, C](other1: Globe[B], other2: Globe[C]): Globe[(A, B, C)] =
+    zip(other1.zip(other2)).map {case (a, (b, c)) => (a, b, c)}
+
   def cursor: GlobeCursor[A] = GlobeCursor(0, 0, this)
   def allCursors: Globe[GlobeCursor[A]] =
     new Lazy(coord => GlobeCursor(coord.lat, coord.lng, this), latCount, lngCount)
@@ -86,8 +92,9 @@ object Globe {
     Globe(_ => a, lats, lngs)
 
   //As above
-  def fromArray[A](arr: Array[A], lats: Int, lngs: Int): Globe[A] =
+  def fromArray[A](arr: Array[A], lats: Int, lngs: Int): Globe[A] = {
     new Eager(arr, lats, lngs)
+  }
 
   def HalfCircle = Degrees(180)
   def FullCircle = Degrees(360)
@@ -109,7 +116,9 @@ object Globe {
   // Represents values of A distributed along a sphere.
   // Outer vector represents north to south, inner vectors are west to east.
   private final class Lazy[A](val f: RectCoord => A, val latCount: Int, val lngCount: Int) extends Globe[A] {
-    override def apply(coord: RectCoord): A = f(coord)
+    override def apply(coord: RectCoord): A = {
+      f(coord)
+    }
 
     override def toString() = "GlobeF(<function>," + latCount + ", " + lngCount + ")"
   }
@@ -140,7 +149,8 @@ object GlobeCursor {
     override def copoint[A](p: GlobeCursor[A]): A =
       p.extract
 
-    override def cobind[A, B](fa: GlobeCursor[A])(f: GlobeCursor[A] => B): GlobeCursor[B] = ???
+    override def cobind[A, B](fa: GlobeCursor[A])(f: GlobeCursor[A] => B): GlobeCursor[B] =
+      fa.duplicate.map(f)
 
     override def map[A, B](fa: GlobeCursor[A])(f: A => B): GlobeCursor[B] =
       fa.map(f)
