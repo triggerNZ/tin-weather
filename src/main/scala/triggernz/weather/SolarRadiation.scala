@@ -1,6 +1,8 @@
 package triggernz.weather
-// https://www.researchgate.net/profile/Mohamad_Kharseh/post/What_is_the_extra-terrestrial_solar_radiance_F0/attachment/59d63e0ac49f478072ea8d7b/AS%3A273765705945088%401442282238044/download/Solar+Radiation+Calculation.pdf
 
+case class SolarRadiation(value: Double) extends AnyVal
+
+// https://www.researchgate.net/profile/Mohamad_Kharseh/post/What_is_the_extra-terrestrial_solar_radiance_F0/attachment/59d63e0ac49f478072ea8d7b/AS%3A273765705945088%401442282238044/download/Solar+Radiation+Calculation.pdf
 object SolarRadiation {
   private val MaxDeclination = Degrees(23.45)
   private val TwoPi = Math.PI * 2
@@ -12,9 +14,9 @@ object SolarRadiation {
     MaxDeclination * -Math.sin((284.0 + day.day) / 365 * TwoPi)
 
 
-  def sinSolarRadiationGlobe(latCount: Int, lngCount: Int, day: DayOfYear, utcHour: Hours) =
+  def solarRadiationGlobe(latCount: Int, lngCount: Int, day: DayOfYear, utcHour: Hours): Globe[SolarRadiation] =
     Globe.ofCoordinates(latCount, lngCount).map { case (lat, lng) =>
-      sinSolarElevation(lng, lat, day, utcHour)
+      SolarRadiation(sinSolarElevation(lng, lat, day, utcHour))
     }
 
   def hourAngle(longitude: Degrees, utcHour: Hours): Degrees = {

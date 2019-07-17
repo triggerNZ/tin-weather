@@ -17,13 +17,13 @@ object Temperature {
 
   // This is fudged to kinda make sense. Oceans cool and heat slowly, Lowlands cool and heat quickly. Mountains cool
   // quickly and heat slowly
-  def updateTemperature(old: Temperature, terrain: Terrain, solarRadiation: Double): Temperature = terrain match {
+  def updateTemperature(old: Temperature, terrain: Terrain, solarRadiation: SolarRadiation): Temperature = terrain match {
     case Terrain.Lowland =>
-      Temperature(old.kelvin + solarRadiation * LowlandHeat - LowlandCool)
+      Temperature(old.kelvin + solarRadiation.value * LowlandHeat - LowlandCool)
     case Terrain.Mountains =>
-      Temperature(old.kelvin + solarRadiation * MountainHeat - MountainCool)
+      Temperature(old.kelvin + solarRadiation.value * MountainHeat - MountainCool)
     case Terrain.Sea =>
-      Temperature(old.kelvin + solarRadiation * OceanHeat - OceanCool)
+      Temperature(old.kelvin + solarRadiation.value * OceanHeat - OceanCool)
   }
 
   def initialTemperatureGlobe(latCount: Int, lngCount: Int, equatorTemperature: Temperature, poleTemperature: Temperature): Globe[Temperature] =
