@@ -51,7 +51,7 @@ object Main {
 
   def conditionString(cloud: Cloud, prec: Precipitation): String = prec match {
     case Precipitation.None if cloud.percent > 0.4 => "Cloudy"
-    case Precipitation.None => "Clear"
+    case Precipitation.None => "Clear"  // Choosing 'clear' rather than 'sunny' because we don't know if it is dark
     case Precipitation.Rain => "Rain"
     case Precipitation.Snow => "Snow"
   }
@@ -62,9 +62,9 @@ object Main {
       case "--demoImage" :: name :: Nil =>
         demo(name)
       case "--convection" :: daysStr :: Nil =>
-        outputTable(daysStr.toInt, Convection.convection)
+        outputTable(daysStr.toInt, 3, Convection.convection)
       case Nil =>
-        outputTable(365, Convection.noop)
+        outputTable(365, 1, Convection.noop)
       case _ =>
         println(args.toList)
         println("Usage: <no args> | --convection <days> | --demoImage <demo image name>")
@@ -91,12 +91,11 @@ object Main {
       (humidity.value * 100).toInt.toString
     ).mkString("|")
 
-  def outputTable(days: Int, convectionFunction: Convection.ConvectionFn): Unit = {
-    val HoursPerStep = 3
+  def outputTable(days: Int, hoursPerStep: Int, convectionFunction: Convection.ConvectionFn): Unit = {
     // Imperative here deliberately. Scala streams aren't great. Given that this is the main loop of the simulation,
     // its acceptable.
     var currentGlobe = initial
-    (0 to (days * 24) by HoursPerStep).foreach { hourInt =>
+    (0 to (days * 24) by hoursPerStep).foreach { hourInt =>
       val hour = Hours(hourInt)
       cities.flatMap { case (name, ((lat, lng), requiredHours)) =>
         // It may be surprising to calculate unneeded states here. However it actually helps us prevent stack overflows
@@ -112,7 +111,7 @@ object Main {
           None
         }
       }.foreach(println)
-      currentGlobe = iterate(currentGlobe, hour, Hours(HoursPerStep), convectionFunction)
+      currentGlobe = iterate(currentGlobe, hour, Hours(hoursPerStep), convectionFunction)
     }
   }
 

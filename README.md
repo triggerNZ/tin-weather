@@ -10,7 +10,7 @@ To generate the output table:
 sbt run
 ```
 
-will generate the basic output table without convection for 365 days in 3 hour steps.
+will generate the basic output table without convection for 365 days in 1 hour steps.
 
 ```
 sbt "run --convection <num-days>" 
@@ -54,6 +54,8 @@ Core Abstractions
 A `Globe[A]` is a data structure representing values of `A` distributed around a sphere. It is applicative 
 but not monadic. All weather states are represented as globes. The final representation of weather is represented
 as a `Globe[(Temperature, Pressure, Humidity, Cloud, Precipitation)]`.
+
+Of course, `A` can be anything, data or functions.
 
 ##### Laziness
 

@@ -49,6 +49,9 @@ object Simulation {
   def initial: Globe[WeatherSystem] =
     initialTemperature.zip5(initialPressure, initialHumidity, initialCloud, initialPrecipitation)
 
+  def fixTemperature: Globe[Temperature => Temperature] =
+    FixTemperatureToRange.fixTemperatureGlobe(elevations.latCount, elevations.lngCount)
+
   def iterate(last: Globe[WeatherSystem],
               hours: Hours,
               dt: Hours,
@@ -56,13 +59,13 @@ object Simulation {
     val day = DayOfYear((hours.value / 24).toInt) // Yes this isn't really correct. But it's a game
     val hourOfDay = Hours(hours.value - day.day * 24)
 
-    val nonComonadicComponents: Globe[(Terrain, SolarRadiation, Int)] =
-      terrain.zip3(sinSunshine(day, hourOfDay), elevationsInMetres)
+    val nonComonadicComponents: Globe[(Terrain, SolarRadiation, Int, Temperature => Temperature)] =
+      terrain.zip4(sinSunshine(day, hourOfDay), elevationsInMetres, fixTemperature)
 
-    val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c, d)) => (a, b, c, d) }
+    val allComponents = last.zip(nonComonadicComponents).map { case (a, (b,c, d, e)) => (a, b, c, d, e) }
 
     allComponents.cursor.cobind { cursor =>
-      val ((oldTemp, _, oldHumidity, oldCloud, oldPrec), terrain, solarRadiation, elevation) = cursor.extract
+      val ((oldTemp, _, oldHumidity, oldCloud, _), terrain, solarRadiation, elevation, fix) = cursor.extract
 
       val (newPrec, cloudAfterPrec) = Precipitation.precipitation(oldCloud, oldTemp)
       val newTemp = Temperature.updateTemperature(oldTemp, terrain, solarRadiation, oldCloud, dt)
@@ -70,14 +73,15 @@ object Simulation {
       val newHumidity = Humidity.updateHumidity(oldHumidity, oldTemp, terrain, dt)
       val (newCloud, humidityAfterCloud) = Cloud.updateCloud(cloudAfterPrec, newHumidity)
 
-      (newTemp, newPressure, humidityAfterCloud, newCloud, newPrec, terrain, solarRadiation)
+      (newTemp, newPressure, humidityAfterCloud, newCloud, newPrec, terrain, solarRadiation, fix)
     }.cobind {cursor =>
-      val (_, _, _, _, prec, terr, rad) = cursor.extract
+      val (_, _, _, _, prec, terr, rad, fix) = cursor.extract
       val convectedValues = cursor.map({
-        case (temp, pres, humid, cloud, _, _, _) => (temp, pres, cloud, humid)
+        case (temp, pres, humid, cloud, _, _, _, _) => (temp, pres, cloud, humid)
       }).cobind(convectionFunction(_, hours))
       val (temp, press, cloud, humid) = convectedValues.extract
-      (temp, press, humid, cloud, prec, terr, rad)
+      val fixedTemp = fix(temp)
+      (fixedTemp, press, humid, cloud, prec, terr, rad)
     }.globe.map { case (temp, press, humid, cloud, prec, _, _) => (temp, press, humid, cloud, prec) }
   }
 
